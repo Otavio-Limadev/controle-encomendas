@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 97%;
+    --foreground: 220 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 15%;
+
+    --primary: 0 78% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 20% 15%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 0 78% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 0 78% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --eva-red: 0 78% 50%;
+    --eva-red-light: 0 78% 95%;
+    --eva-red-dark: 0 78% 40%;
+    --eva-green: 145 65% 42%;
+    --eva-green-light: 145 65% 94%;
+    --eva-warning: 38 92% 50%;
+    --eva-warning-light: 38 92% 94%;
+    --eva-danger: 0 84% 55%;
+    --eva-danger-light: 0 84% 95%;
+
+    --surface-1: 0 0% 100%;
+    --surface-2: 220 14% 97%;
+    --surface-3: 220 14% 94%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 15%;
+    --sidebar-primary: 0 78% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 20% 15%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 0 78% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+}
+
+@layer utilities {
+  .eva-card {
+    background: hsl(var(--surface-1));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(220 20% 15% / 0.04), 0 4px 12px hsl(220 20% 15% / 0.03);
+  }
+
+  .eva-card-elevated {
+    background: hsl(var(--surface-1));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 2px 8px hsl(220 20% 15% / 0.06), 0 8px 24px hsl(220 20% 15% / 0.04);
+  }
+
+  .eva-glow-red {
+    box-shadow: 0 4px 14px hsl(var(--eva-red) / 0.15);
+  }
+
+  .eva-glow-green {
+    box-shadow: 0 4px 14px hsl(var(--eva-green) / 0.15);
+  }
+
+  .eva-glow-warning {
+    box-shadow: 0 4px 14px hsl(var(--eva-warning) / 0.15);
+  }
+}

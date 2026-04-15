@@ -35,3 +35,7 @@ build/
 # Minhas pastas locais que não devem ir pro GitHub
 /uploads/
 .idea/
+frontend/node_modules/
+frontend/dist/
+frontend/.idea/
+frontend/.vscode/
