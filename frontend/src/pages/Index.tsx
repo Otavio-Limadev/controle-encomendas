@@ -30,6 +30,7 @@ const buildPackageFromClient = (cliente: Cliente, employeeName: string): Package
   descricao: "Cliente selecionado via busca real. Encomenda pronta para acompanhamento local no front.",
   recebidoPor: employeeName,
   whatsapp: cliente.whatsapp || "",
+  codigoRastreio: "",
   textoAuxiliar: "A selecao acima preenche automaticamente estes detalhes e a rastreabilidade da encomenda.",
 });
 
@@ -112,6 +113,26 @@ const Index = () => {
     });
   };
 
+  const handleSaveTrackingCode = (pkg: Package, codigoRastreio: string) => {
+    const updatedPackage: Package = {
+      ...pkg,
+      codigoRastreio,
+      textoAuxiliar: `Codigo de rastreio ${codigoRastreio} registrado e pronto para integracao com o backend.`,
+    };
+
+    setPackageList((currentPackages) =>
+      currentPackages.map((currentPackage) =>
+        currentPackage.id === updatedPackage.id ? updatedPackage : currentPackage
+      )
+    );
+    setSelected(updatedPackage);
+
+    toast({
+      title: "Codigo capturado",
+      description: `Leitura registrada para ${updatedPackage.cliente}.`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1600px] mx-auto p-4 flex flex-col gap-4">
@@ -130,7 +151,11 @@ const Index = () => {
           </div>
           <div className="flex flex-col gap-4">
             <ClientSearchCard selectedClient={selectedClient} onSelectClient={handleSelectClient} />
-            <PackageDetail pkg={selected} onMarkAsSent={handleMarkAsSent} />
+            <PackageDetail
+              pkg={selected}
+              onMarkAsSent={handleMarkAsSent}
+              onSaveTrackingCode={handleSaveTrackingCode}
+            />
           </div>
         </div>
       </div>

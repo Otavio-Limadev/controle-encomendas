@@ -9,6 +9,7 @@ export interface Package {
   descricao: string;
   recebidoPor: string;
   whatsapp?: string;
+  codigoRastreio?: string;
   textoAuxiliar?: string;
   fotoEnviadaPor?: string;
   marcadoEnviadoPor?: string;

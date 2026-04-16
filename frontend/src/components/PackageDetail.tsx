@@ -1,6 +1,10 @@
+import { useEffect, useRef, useState } from "react";
+
 import { Package } from "@/data/mockData";
-import { Camera, CheckCircle2, RefreshCw, User, Building2, Clock, Info, UserCheck, ImageIcon, Send, Phone } from "lucide-react";
+import { Camera, CheckCircle2, RefreshCw, User, Building2, Clock, Info, UserCheck, ImageIcon, Send, Phone, ScanLine } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+import { Input } from "@/components/ui/input";
 
 const statusConfig = {
   enviado: { label: "Enviado", bgClass: "bg-eva-green-light", textClass: "text-eva-green", borderClass: "border-eva-green/30" },
@@ -11,9 +15,23 @@ const statusConfig = {
 interface PackageDetailProps {
   pkg: Package | null;
   onMarkAsSent: (pkg: Package) => void;
+  onSaveTrackingCode: (pkg: Package, codigoRastreio: string) => void;
 }
 
-const PackageDetail = ({ pkg, onMarkAsSent }: PackageDetailProps) => {
+const PackageDetail = ({ pkg, onMarkAsSent, onSaveTrackingCode }: PackageDetailProps) => {
+  const [trackingInput, setTrackingInput] = useState("");
+  const scannerInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!pkg) {
+      setTrackingInput("");
+      return;
+    }
+
+    setTrackingInput(pkg.codigoRastreio ?? "");
+    scannerInputRef.current?.focus();
+  }, [pkg]);
+
   if (!pkg) {
     return (
       <div className="eva-card-elevated rounded-2xl p-6 flex flex-col items-center justify-center min-h-[500px]">
@@ -26,6 +44,26 @@ const PackageDetail = ({ pkg, onMarkAsSent }: PackageDetailProps) => {
   }
 
   const cfg = statusConfig[pkg.status];
+  const codigoRastreioSalvo = pkg.codigoRastreio?.trim() ?? "";
+
+  const handleTrackingSubmit = () => {
+    const normalizedCode = trackingInput.trim();
+
+    if (!normalizedCode) {
+      scannerInputRef.current?.focus();
+      return;
+    }
+
+    if (normalizedCode === codigoRastreioSalvo) {
+      setTrackingInput("");
+      scannerInputRef.current?.focus();
+      return;
+    }
+
+    onSaveTrackingCode(pkg, normalizedCode);
+    setTrackingInput("");
+    scannerInputRef.current?.focus();
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -68,6 +106,46 @@ const PackageDetail = ({ pkg, onMarkAsSent }: PackageDetailProps) => {
             {pkg.textoAuxiliar}
           </p>
         )}
+
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="font-heading text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Codigo de Rastreio
+            </p>
+            <button
+              type="button"
+              onClick={() => scannerInputRef.current?.focus()}
+              className="inline-flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-surface-3"
+            >
+              <ScanLine className="h-3.5 w-3.5" />
+              Escanear codigo
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Input
+              ref={scannerInputRef}
+              type="text"
+              value={trackingInput}
+              autoFocus
+              placeholder="Aproxime o leitor ou digite o codigo"
+              className="h-11 rounded-xl border-border bg-surface-2"
+              onChange={(event) => setTrackingInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleTrackingSubmit();
+                }
+              }}
+            />
+
+            <div className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted-foreground">
+              {codigoRastreioSalvo
+                ? `Codigo salvo: ${codigoRastreioSalvo}`
+                : "Nenhum codigo registrado para esta encomenda."}
+            </div>
+          </div>
+        </div>
 
         <div className="border-t border-border pt-4">
           <p className="font-heading text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
