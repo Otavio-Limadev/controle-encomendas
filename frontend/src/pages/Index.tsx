@@ -270,6 +270,36 @@ const Index = () => {
     });
   };
 
+  const handleDeletePackage = (pkg: Package) => {
+    const shouldDelete = window.confirm("Tem certeza que deseja excluir esta encomenda?");
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setPackageList((currentPackages) => {
+      const nextPackages = currentPackages.filter((currentPackage) => currentPackage.id !== pkg.id);
+
+      setSelected((currentSelected) => {
+        if (currentSelected?.id !== pkg.id) {
+          return currentSelected;
+        }
+
+        return nextPackages[0] ?? null;
+      });
+
+      return nextPackages;
+    });
+
+    toast({
+      title: "Encomenda removida",
+      description:
+        pkg.origin === "api"
+          ? "A remocao foi aplicada apenas na interface. Conecte um endpoint DELETE para persistir no backend."
+          : `${pkg.cliente} foi removido(a) da lista atual.`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1600px] mx-auto p-4 flex flex-col gap-4">
@@ -283,8 +313,13 @@ const Index = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 flex flex-col gap-4">
-            <PackageTable packages={packageList} selectedId={selected?.id ?? null} onSelect={handleSelectPackage} />
-            <RecentEvents />
+            <PackageTable
+              packages={packageList}
+              selectedId={selected?.id ?? null}
+              onSelect={handleSelectPackage}
+              onDelete={handleDeletePackage}
+            />
+            <RecentEvents packages={packageList} />
           </div>
           <div className="flex flex-col gap-4">
             <ClientSearchCard selectedClient={selectedClient} onSelectClient={handleSelectClient} />

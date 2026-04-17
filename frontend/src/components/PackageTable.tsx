@@ -1,5 +1,6 @@
 import { Package } from "@/data/mockData";
 import { motion } from "framer-motion";
+import { Trash2 } from "lucide-react";
 
 const statusConfig = {
   enviado: { label: "Enviado", dotClass: "bg-eva-green", textClass: "text-eva-green", bgClass: "bg-eva-green-light" },
@@ -11,9 +12,10 @@ interface PackageTableProps {
   packages: Package[];
   selectedId: number | null;
   onSelect: (pkg: Package) => void;
+  onDelete: (pkg: Package) => void;
 }
 
-const PackageTable = ({ packages, selectedId, onSelect }: PackageTableProps) => {
+const PackageTable = ({ packages, selectedId, onSelect, onDelete }: PackageTableProps) => {
   return (
     <div className="eva-card-elevated rounded-2xl overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex items-center gap-3">
@@ -31,6 +33,7 @@ const PackageTable = ({ packages, selectedId, onSelect }: PackageTableProps) => 
               <th className="px-5 py-3 text-left font-medium text-xs uppercase tracking-wider text-muted-foreground">Horario</th>
               <th className="px-5 py-3 text-left font-medium text-xs uppercase tracking-wider text-muted-foreground">Status</th>
               <th className="px-5 py-3 text-left font-medium text-xs uppercase tracking-wider text-muted-foreground">Funcionario</th>
+              <th className="px-5 py-3 text-right font-medium text-xs uppercase tracking-wider text-muted-foreground">Acao</th>
             </tr>
           </thead>
           <tbody>
@@ -61,6 +64,19 @@ const PackageTable = ({ packages, selectedId, onSelect }: PackageTableProps) => 
                     </span>
                   </td>
                   <td className="px-5 py-3 text-muted-foreground">{pkg.funcionario}</td>
+                  <td className="px-5 py-3 text-right">
+                    <button
+                      type="button"
+                      aria-label={`Excluir encomenda de ${pkg.cliente}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDelete(pkg);
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-eva-danger-light hover:text-eva-danger"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </td>
                 </motion.tr>
               );
             })}
