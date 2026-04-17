@@ -153,3 +153,31 @@ export async function apiPatch<TResponse>(path: string): Promise<TResponse> {
 
   throw lastError ?? new Error("API request failed");
 }
+
+export async function apiDelete(path: string): Promise<void> {
+  const normalizedPath = normalizeApiPath(path);
+  const candidates = getApiBaseCandidates();
+
+  let lastError: Error | null = null;
+
+  for (const baseUrl of candidates) {
+    try {
+      const response = await fetch(`${baseUrl}${normalizedPath}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("API request failed");
+    }
+  }
+
+  throw lastError ?? new Error("API request failed");
+}

@@ -10,7 +10,7 @@ import RecentEvents from "@/components/RecentEvents";
 import { packages, Package } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
-import { apiGet, apiPatch, apiPostForm } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPostForm } from "@/lib/api";
 import type { Cliente } from "@/types/cliente";
 
 const metrics = [
@@ -277,26 +277,49 @@ const Index = () => {
       return;
     }
 
-    setPackageList((currentPackages) => {
-      const nextPackages = currentPackages.filter((currentPackage) => currentPackage.id !== pkg.id);
+    const removePackageFromUi = () => {
+      setPackageList((currentPackages) => {
+        const nextPackages = currentPackages.filter((currentPackage) => currentPackage.id !== pkg.id);
 
-      setSelected((currentSelected) => {
-        if (currentSelected?.id !== pkg.id) {
-          return currentSelected;
-        }
+        setSelected((currentSelected) => {
+          if (currentSelected?.id !== pkg.id) {
+            return currentSelected;
+          }
 
-        return nextPackages[0] ?? null;
+          return nextPackages[0] ?? null;
+        });
+
+        return nextPackages;
       });
+    };
 
-      return nextPackages;
-    });
+    if (pkg.origin === "api" && pkg.backendId) {
+      void (async () => {
+        try {
+          await apiDelete(`/encomendas/${pkg.backendId}`);
+          removePackageFromUi();
+
+          toast({
+            title: "Encomenda removida",
+            description: `${pkg.cliente} foi excluido(a) com sucesso.`,
+          });
+        } catch {
+          toast({
+            title: "Erro ao excluir",
+            description: "Nao foi possivel excluir esta encomenda na API.",
+            variant: "destructive",
+          });
+        }
+      })();
+
+      return;
+    }
+
+    removePackageFromUi();
 
     toast({
       title: "Encomenda removida",
-      description:
-        pkg.origin === "api"
-          ? "A remocao foi aplicada apenas na interface. Conecte um endpoint DELETE para persistir no backend."
-          : `${pkg.cliente} foi removido(a) da lista atual.`,
+      description: `${pkg.cliente} foi removido(a) da lista atual.`,
     });
   };
 
