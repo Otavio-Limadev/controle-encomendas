@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+target
+frontend
+logs
+uploads
+node_modules
+*.log
+render.yaml
