@@ -1,4 +1,5 @@
 const API_PATH_PREFIX = "/api";
+const DEFAULT_API_URL = "https://controle-encomendas-cnnd.onrender.com";
 
 const getApiBaseCandidates = () => {
   const configuredBase =
@@ -8,15 +9,7 @@ const getApiBaseCandidates = () => {
     return [configuredBase.replace(/\/$/, "")];
   }
 
-  if (import.meta.env.DEV) {
-    return ["http://localhost:8080"];
-  }
-
-  if (typeof window !== "undefined") {
-    return [window.location.origin];
-  }
-
-  return [""];
+  return [DEFAULT_API_URL];
 };
 
 const normalizeApiPath = (path: string) =>
