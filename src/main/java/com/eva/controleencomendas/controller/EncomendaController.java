@@ -104,7 +104,6 @@ public class EncomendaController {
                 .orElseThrow(() -> new RuntimeException("Encomenda não encontrada"));
 
         String novoStatus = body.get("status");
-        String observacao = resolveObservacao(body.get("observacao"), body.get("observacoes"));
         if (novoStatus != null) {
             encomenda.setStatus(novoStatus);
 
@@ -112,9 +111,19 @@ public class EncomendaController {
             String mensagemLog = "Encomenda " + novoStatus.toLowerCase() + " - " + encomenda.getCliente().getCompanyName();
             atividadeRepository.save(new Atividade(mensagemLog, "SUCESSO"));
         }
-        if (observacao != null) {
-            encomenda.setObservacao(observacao);
+        if (containsObservacao(body)) {
+            encomenda.setObservacao(resolveObservacao(body.get("observacao"), body.get("observacoes")));
         }
+
+        return encomendaRepository.save(encomenda);
+    }
+
+    @PatchMapping("/{id}/observacao")
+    public Encomenda atualizarObservacao(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        Encomenda encomenda = encomendaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Encomenda nÃ£o encontrada"));
+
+        encomenda.setObservacao(resolveObservacao(body.get("observacao"), body.get("observacoes")));
 
         return encomendaRepository.save(encomenda);
     }
@@ -183,5 +192,9 @@ public class EncomendaController {
         }
 
         return null;
+    }
+
+    private boolean containsObservacao(Map<String, String> body) {
+        return body.containsKey("observacao") || body.containsKey("observacoes");
     }
 }
