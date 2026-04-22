@@ -106,6 +106,7 @@ public class EncomendaController {
         String novoStatus = body.get("status");
         if (novoStatus != null) {
             encomenda.setStatus(novoStatus);
+            preencherDataEntregaSeNecessario(encomenda, novoStatus);
 
             // REGISTRA NO LOG: Mudança de status
             String mensagemLog = "Encomenda " + novoStatus.toLowerCase() + " - " + encomenda.getCliente().getCompanyName();
@@ -137,6 +138,7 @@ public class EncomendaController {
         Encomenda encomenda = encomendaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Encomenda não encontrada"));
         encomenda.setStatus("Entregue");
+        preencherDataEntregaSeNecessario(encomenda, "Entregue");
         if (marcadoEnviadoPor != null && !marcadoEnviadoPor.isBlank()) {
             encomenda.setMarcadoEnviadoPor(marcadoEnviadoPor);
         }
@@ -196,5 +198,15 @@ public class EncomendaController {
 
     private boolean containsObservacao(Map<String, String> body) {
         return body.containsKey("observacao") || body.containsKey("observacoes");
+    }
+
+    private void preencherDataEntregaSeNecessario(Encomenda encomenda, String status) {
+        if (encomenda.getDataEntrega() != null || status == null) {
+            return;
+        }
+
+        if ("entregue".equalsIgnoreCase(status) || "enviado".equalsIgnoreCase(status)) {
+            encomenda.setDataEntrega(LocalDateTime.now());
+        }
     }
 }
