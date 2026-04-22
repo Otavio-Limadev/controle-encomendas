@@ -51,7 +51,9 @@ public class EncomendaController {
             @RequestParam("clienteId") Long clienteId,
             @RequestParam("descricao") String descricao,
             @RequestParam("arquivo") MultipartFile arquivo,
-            @RequestParam(value = "recebidoPor", required = false) String recebidoPor) throws IOException {
+            @RequestParam(value = "recebidoPor", required = false) String recebidoPor,
+            @RequestParam(value = "observacao", required = false) String observacao,
+            @RequestParam(value = "observacoes", required = false) String observacoes) throws IOException {
 
         Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
@@ -70,6 +72,7 @@ public class EncomendaController {
         encomenda.setDescricao(descricao);
         encomenda.setUrlFoto("/uploads/" + nomeArquivo);
         encomenda.setStatus("Pendente");
+        encomenda.setObservacao(resolveObservacao(observacao, observacoes));
         encomenda.setRecebidoPor(recebidoPor);
         encomenda.setMarcadoEnviadoPor(null);
 
@@ -101,12 +104,16 @@ public class EncomendaController {
                 .orElseThrow(() -> new RuntimeException("Encomenda não encontrada"));
 
         String novoStatus = body.get("status");
+        String observacao = resolveObservacao(body.get("observacao"), body.get("observacoes"));
         if (novoStatus != null) {
             encomenda.setStatus(novoStatus);
 
             // REGISTRA NO LOG: Mudança de status
             String mensagemLog = "Encomenda " + novoStatus.toLowerCase() + " - " + encomenda.getCliente().getCompanyName();
             atividadeRepository.save(new Atividade(mensagemLog, "SUCESSO"));
+        }
+        if (observacao != null) {
+            encomenda.setObservacao(observacao);
         }
 
         return encomendaRepository.save(encomenda);
@@ -115,12 +122,18 @@ public class EncomendaController {
     @PatchMapping("/{id}/entregar")
     public Encomenda entregar(
             @PathVariable Long id,
-            @RequestParam(value = "marcadoEnviadoPor", required = false) String marcadoEnviadoPor) {
+            @RequestParam(value = "marcadoEnviadoPor", required = false) String marcadoEnviadoPor,
+            @RequestParam(value = "observacao", required = false) String observacao,
+            @RequestParam(value = "observacoes", required = false) String observacoes) {
         Encomenda encomenda = encomendaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Encomenda não encontrada"));
         encomenda.setStatus("Entregue");
         if (marcadoEnviadoPor != null && !marcadoEnviadoPor.isBlank()) {
             encomenda.setMarcadoEnviadoPor(marcadoEnviadoPor);
+        }
+        String observacaoNormalizada = resolveObservacao(observacao, observacoes);
+        if (observacaoNormalizada != null) {
+            encomenda.setObservacao(observacaoNormalizada);
         }
 
         // REGISTRA NO LOG: Entrega
@@ -158,5 +171,17 @@ public class EncomendaController {
         atividadeRepository.save(new Atividade("Uma encomenda foi excluída do sistema (ID: " + id + ")", "AVISO"));
 
         return ResponseEntity.noContent().build();
+    }
+
+    private String resolveObservacao(String observacao, String observacoes) {
+        if (observacao != null && !observacao.isBlank()) {
+            return observacao.trim();
+        }
+
+        if (observacoes != null && !observacoes.isBlank()) {
+            return observacoes.trim();
+        }
+
+        return null;
     }
 }
