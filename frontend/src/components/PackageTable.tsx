@@ -56,7 +56,7 @@ const PackageTable = ({ packages, selectedId, onSelect, onDelete }: PackageTable
                   <td className="px-5 py-3 text-muted-foreground">
                     Caixa Postal {pkg.sala} · {pkg.empresa}
                   </td>
-                  <td className="px-5 py-3 font-heading tabular-nums text-foreground">{pkg.horario}</td>
+                  <td className="px-5 py-3 font-heading text-xs tabular-nums text-foreground whitespace-nowrap">{pkg.horario}</td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bgClass} ${cfg.textClass}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />

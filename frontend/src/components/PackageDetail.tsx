@@ -45,6 +45,7 @@ const PackageDetail = ({ pkg, onMarkAsSent, onSaveTrackingCode }: PackageDetailP
 
   const cfg = statusConfig[pkg.status];
   const codigoRastreioSalvo = pkg.codigoRastreio?.trim() ?? "";
+  const receivedAtLabel = pkg.horario.split(" / ")[0];
 
   const handleTrackingSubmit = () => {
     const normalizedCode = trackingInput.trim();
@@ -85,7 +86,7 @@ const PackageDetail = ({ pkg, onMarkAsSent, onSaveTrackingCode }: PackageDetailP
         <div className="grid grid-cols-2 gap-3">
           <DetailItem icon={Building2} label="Empresa" value={pkg.empresa} />
           <DetailItem icon={User} label="Caixa Postal" value={pkg.sala} />
-          <DetailItem icon={Clock} label="Recebido" value={pkg.horario} />
+          <DetailItem icon={Clock} label="Recebido" value={receivedAtLabel} />
           <DetailItem icon={Phone} label="WhatsApp" value={pkg.whatsapp || "Nao informado"} />
           <div className="flex items-start gap-2.5">
             <div className="rounded-lg bg-eva-red-light p-1.5">

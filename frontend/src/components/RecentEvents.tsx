@@ -93,7 +93,9 @@ const RecentEvents = ({ packages }: RecentEventsProps) => {
                   Funcionario: {pkg.funcionario || "Nao informado"} · Status: {pkg.status}
                 </p>
               </div>
-              <span className="font-heading text-xs tabular-nums text-muted-foreground">{pkg.horario}</span>
+              <span className="font-heading text-[11px] tabular-nums text-muted-foreground whitespace-nowrap text-right">
+                {pkg.horario}
+              </span>
             </motion.div>
           );
         })}
