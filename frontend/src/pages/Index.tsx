@@ -25,6 +25,7 @@ interface ApiEncomenda {
   descricao: string;
   status: string;
   dataRecebimento: string;
+  dataEntrega: string | null;
   urlFoto: string | null;
   recebidoPor: string | null;
   marcadoEnviadoPor: string | null;
@@ -37,7 +38,21 @@ interface ApiEncomenda {
   };
 }
 
-const formatPackageTime = (value: string) => {
+const formatPackageDatePart = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "--/--";
+  }
+
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+};
+
+const formatPackageTimePart = (value: string) => {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -47,7 +62,19 @@ const formatPackageTime = (value: string) => {
   return date.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   });
+};
+
+const formatPackageSchedule = (dataRecebimento: string, dataEntrega: string | null) => {
+  const receivedDate = formatPackageDatePart(dataRecebimento);
+  const receivedTime = formatPackageTimePart(dataRecebimento);
+
+  if (!dataEntrega) {
+    return `${receivedDate} ${receivedTime}`;
+  }
+
+  return `${receivedDate} ${receivedTime} / ${formatPackageTimePart(dataEntrega)}`;
 };
 
 const mapApiStatusToPackageStatus = (status: string): Package["status"] => {
@@ -72,7 +99,7 @@ const mapEncomendaToPackage = (encomenda: ApiEncomenda): Package => ({
   cliente: encomenda.cliente.clientName,
   sala: encomenda.cliente.mailboxNumber || "-",
   empresa: encomenda.cliente.companyName || "Empresa nao informada",
-  horario: formatPackageTime(encomenda.dataRecebimento),
+  horario: formatPackageSchedule(encomenda.dataRecebimento, encomenda.dataEntrega),
   status: mapApiStatusToPackageStatus(encomenda.status),
   funcionario: encomenda.marcadoEnviadoPor || encomenda.recebidoPor || "Nao informado",
   descricao: encomenda.descricao || "Encomenda cadastrada na API.",
