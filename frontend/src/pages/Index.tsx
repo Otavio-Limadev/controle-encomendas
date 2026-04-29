@@ -277,6 +277,36 @@ const Index = () => {
     });
   };
 
+  const handleClientSaved = (cliente: Cliente) => {
+    setSelectedClient(cliente);
+
+    setPackageList((currentPackages) =>
+      currentPackages.map((pkg) =>
+        pkg.origin === "api" && pkg.clientId === cliente.id
+          ? {
+              ...pkg,
+              cliente: cliente.clientName,
+              sala: cliente.mailboxNumber || "-",
+              empresa: cliente.companyName || "Empresa nao informada",
+              whatsapp: cliente.whatsapp || "",
+            }
+          : pkg
+      )
+    );
+
+    setSelected((currentSelected) =>
+      currentSelected?.origin === "api" && currentSelected.clientId === cliente.id
+        ? {
+            ...currentSelected,
+            cliente: cliente.clientName,
+            sala: cliente.mailboxNumber || "-",
+            empresa: cliente.companyName || "Empresa nao informada",
+            whatsapp: cliente.whatsapp || "",
+          }
+        : currentSelected
+    );
+  };
+
   const handleSaveTrackingCode = (pkg: Package, codigoRastreio: string) => {
     const updatedPackage: Package = {
       ...pkg,
@@ -372,7 +402,11 @@ const Index = () => {
             <RecentEvents packages={packageList} />
           </div>
           <div className="flex flex-col gap-4">
-            <ClientSearchCard selectedClient={selectedClient} onSelectClient={handleSelectClient} />
+            <ClientSearchCard
+              selectedClient={selectedClient}
+              onSelectClient={handleSelectClient}
+              onClientSaved={handleClientSaved}
+            />
             <PackageDetail
               pkg={selected}
               onMarkAsSent={handleMarkAsSent}

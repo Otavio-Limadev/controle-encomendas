@@ -1,9 +1,20 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Building2, Loader2, MapPinned, Phone, Search, User2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2, Loader2, MapPinned, Pencil, Phone, Plus, Search, User2 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { apiGet } from "@/lib/api";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
+import { apiGet, apiPost, apiPut } from "@/lib/api";
 import type { Cliente } from "@/types/cliente";
 
 const MIN_SEARCH_LENGTH = 2;
@@ -36,14 +47,44 @@ const searchClientsByName = async (term: string) => {
 
 const fetchAllClients = async () => apiGet<Cliente[]>("/clientes");
 
+type ClientFormMode = "create" | "edit";
+
+type ClientFormFields = Pick<Cliente, "clientName" | "companyName" | "mailboxNumber" | "whatsapp">;
+
+const emptyClientForm: ClientFormFields = {
+  clientName: "",
+  companyName: "",
+  mailboxNumber: "",
+  whatsapp: "",
+};
+
+const buildClientForm = (cliente?: Cliente | null, fallbackName = ""): ClientFormFields => ({
+  clientName: cliente?.clientName ?? fallbackName,
+  companyName: cliente?.companyName ?? "",
+  mailboxNumber: cliente?.mailboxNumber ?? "",
+  whatsapp: cliente?.whatsapp ?? "",
+});
+
+const normalizeClientPayload = (form: ClientFormFields): ClientFormFields => ({
+  clientName: form.clientName.trim(),
+  companyName: form.companyName.trim(),
+  mailboxNumber: form.mailboxNumber.trim(),
+  whatsapp: form.whatsapp?.trim() || "",
+});
+
 interface ClientSearchCardProps {
   selectedClient: Cliente | null;
   onSelectClient: (cliente: Cliente) => void;
+  onClientSaved?: (cliente: Cliente) => void;
 }
 
-const ClientSearchCard = ({ selectedClient, onSelectClient }: ClientSearchCardProps) => {
+const ClientSearchCard = ({ selectedClient, onSelectClient, onClientSaved }: ClientSearchCardProps) => {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [isListOpen, setIsListOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<ClientFormMode>("create");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [form, setForm] = useState<ClientFormFields>(emptyClientForm);
   const deferredQuery = useDeferredValue(query.trim());
 
   const allClientsQuery = useQuery({
@@ -79,6 +120,77 @@ const ClientSearchCard = ({ selectedClient, onSelectClient }: ClientSearchCardPr
   const hasApiError =
     !!allClientsQuery.error ||
     (deferredQuery.length >= MIN_SEARCH_LENGTH && !!searchQuery.error);
+  const canSubmitClient =
+    form.clientName.trim().length > 0 &&
+    form.companyName.trim().length > 0 &&
+    form.mailboxNumber.trim().length > 0;
+
+  const saveClientMutation = useMutation({
+    mutationFn: async () => {
+      const payload = normalizeClientPayload(form);
+
+      if (dialogMode === "edit") {
+        if (!selectedClient) {
+          throw new Error("Cliente nao selecionado");
+        }
+
+        return apiPut<Cliente, ClientFormFields>(`/clientes/${selectedClient.id}`, payload);
+      }
+
+      return apiPost<Cliente, ClientFormFields>("/clientes", payload);
+    },
+    onSuccess: (savedClient) => {
+      queryClient.setQueryData<Cliente[]>(["clientes", "all"], (currentClients) => {
+        const nextClients = currentClients?.some((cliente) => cliente.id === savedClient.id)
+          ? currentClients.map((cliente) => (cliente.id === savedClient.id ? savedClient : cliente))
+          : [...(currentClients ?? []), savedClient];
+
+        return dedupeClients(nextClients);
+      });
+      void queryClient.invalidateQueries({ queryKey: ["clientes", "search"] });
+
+      setQuery(savedClient.clientName);
+      setIsDialogOpen(false);
+      setIsListOpen(false);
+
+      if (dialogMode === "edit") {
+        onClientSaved?.(savedClient);
+      } else {
+        onSelectClient(savedClient);
+      }
+
+      toast({
+        title: dialogMode === "edit" ? "Cliente atualizado" : "Cliente cadastrado",
+        description:
+          dialogMode === "edit"
+            ? `${savedClient.clientName} foi atualizado sem criar duplicado.`
+            : `${savedClient.clientName} foi cadastrado com sucesso.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao salvar cliente",
+        description: "Nao foi possivel salvar o cadastro do cliente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const openCreateDialog = () => {
+    setDialogMode("create");
+    setForm(buildClientForm(null, query.trim()));
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = () => {
+    if (!selectedClient) {
+      return;
+    }
+
+    setDialogMode("edit");
+    setForm(buildClientForm(selectedClient));
+    setIsDialogOpen(true);
+  };
 
   useEffect(() => {
     if (!selectedClient) {
@@ -183,9 +295,19 @@ const ClientSearchCard = ({ selectedClient, onSelectClient }: ClientSearchCardPr
                 ))}
               </div>
             ) : (
-              <p className="px-4 py-3 text-sm text-muted-foreground">
-                Nenhum cliente encontrado com esse termo.
-              </p>
+              <div className="px-4 py-3">
+                <p className="text-sm text-muted-foreground">
+                  Nenhum cliente encontrado com esse termo.
+                </p>
+                <button
+                  type="button"
+                  onClick={openCreateDialog}
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-eva-red-dark"
+                >
+                  <Plus className="h-4 w-4" />
+                  Cadastrar novo cliente
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -214,9 +336,110 @@ const ClientSearchCard = ({ selectedClient, onSelectClient }: ClientSearchCardPr
         />
       </div>
 
+      {selectedClient && (
+        <div className="flex justify-end border-t border-border pt-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={openEditDialog}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar cliente
+          </Button>
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground border-t border-border pt-3">
         As sugestoes acima usam dados reais do backend. O dashboard visual permanece intacto.
       </p>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === "edit" ? "Editar cliente" : "Cadastrar novo cliente"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogMode === "edit"
+                ? "Atualize o cadastro existente. As encomendas seguem vinculadas ao mesmo cliente."
+                : "Preencha os dados principais para usar este cliente no lancamento."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+
+              if (!canSubmitClient) {
+                return;
+              }
+
+              saveClientMutation.mutate();
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="clientName">Nome do cliente</Label>
+              <Input
+                id="clientName"
+                value={form.clientName}
+                onChange={(event) => setForm((current) => ({ ...current, clientName: event.target.value }))}
+                className="h-10 rounded-xl border-border bg-surface-2"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Empresa</Label>
+              <Input
+                id="companyName"
+                value={form.companyName}
+                onChange={(event) => setForm((current) => ({ ...current, companyName: event.target.value }))}
+                className="h-10 rounded-xl border-border bg-surface-2"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mailboxNumber">Caixa postal</Label>
+              <Input
+                id="mailboxNumber"
+                value={form.mailboxNumber}
+                onChange={(event) => setForm((current) => ({ ...current, mailboxNumber: event.target.value }))}
+                className="h-10 rounded-xl border-border bg-surface-2"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input
+                id="whatsapp"
+                value={form.whatsapp ?? ""}
+                onChange={(event) => setForm((current) => ({ ...current, whatsapp: event.target.value }))}
+                className="h-10 rounded-xl border-border bg-surface-2"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+                disabled={saveClientMutation.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!canSubmitClient || saveClientMutation.isPending}>
+                {saveClientMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
